@@ -1,0 +1,10 @@
+<script>
+export default {
+  onCreate() {
+    console.info('Gallery Mini app created')
+  },
+  onDestroy() {
+    console.info('Gallery Mini app destroyed')
+  }
+}
+</script>
