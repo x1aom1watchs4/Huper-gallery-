@@ -1,0 +1,86 @@
+<template>
+  <scroll class="page" scroll-y="true">
+    <div class="header">
+      <text class="eyebrow">GALLERY MINI</text>
+      <text class="heading">Your photos</text>
+      <text class="status">{{connectionLabel}}</text>
+    </div>
+    <div class="summary">
+      <text class="count">{{photoCount}} / 50</text>
+      <text class="caption">PHOTOS ON WATCH</text>
+    </div>
+    <div class="toolbar">
+      <text class="toolbar-button" @click="refreshConnection">SYNC WITH PHONE</text>
+    </div>
+    <div class="empty" if="{{photos.length === 0}}">
+      <text class="empty-icon">▧</text>
+      <text class="empty-title">Your gallery is empty</text>
+      <text class="empty-copy">Choose photos in Gallery Mini on your phone, then sync them to your watch.</text>
+    </div>
+    <div class="grid">
+      <div class="photo-tile" for="{{photos}}" @click="openPhoto($item)">
+        <image class="thumbnail" src="{{$item.uri}}" />
+        <text class="live-tag" if="{{$item.isLive}}">LIVE</text>
+      </div>
+    </div>
+    <div class="viewer" if="{{selectedPhoto}}">
+      <text class="close" @click="closePhoto">CLOSE</text>
+      <image class="large-photo" src="{{selectedPhoto.uri}}" />
+      <text class="viewer-caption">{{selectedPhoto.name}}</text>
+      <text class="viewer-caption" if="{{selectedPhoto.isLive}}">LIVE PHOTO · MOTION PREVIEW COMING AFTER DEVICE FORMAT TEST</text>
+    </div>
+  </scroll>
+</template>
+
+<style>
+.page { width: 100%; height: 100%; padding: 18px; background-color: #10131a; flex-direction: column; }
+.header { padding: 12px 4px 18px; flex-direction: column; }
+.eyebrow { color: #b9c5ff; font-size: 11px; letter-spacing: 1px; }
+.heading { color: #f0eff7; font-size: 27px; font-weight: bold; margin-top: 5px; }
+.status { color: #bfc5d6; font-size: 12px; margin-top: 8px; }
+.summary { background-color: #242a3a; border-radius: 20px; padding: 16px; flex-direction: column; }
+.count { color: #dce1ff; font-size: 28px; font-weight: bold; }
+.caption { color: #bdc5e1; font-size: 10px; margin-top: 3px; }
+.toolbar { margin-top: 12px; }
+.toolbar-button { color: #18213a; background-color: #c4c9ff; border-radius: 18px; padding: 12px; text-align: center; font-size: 12px; }
+.empty { margin-top: 24px; padding: 22px 14px; background-color: #1b202c; border-radius: 20px; align-items: center; flex-direction: column; }
+.empty-icon { color: #c4c9ff; font-size: 38px; }
+.empty-title { color: #f0eff7; font-size: 16px; font-weight: bold; margin-top: 10px; text-align: center; }
+.empty-copy { color: #bdc5d1; font-size: 12px; margin-top: 8px; text-align: center; line-height: 17px; }
+.grid { flex-direction: row; flex-wrap: wrap; margin-top: 12px; }
+.photo-tile { width: 48%; height: 94px; margin: 1%; border-radius: 12px; background-color: #242a3a; }
+.thumbnail { width: 100%; height: 94px; object-fit: cover; border-radius: 12px; }
+.live-tag { position: absolute; right: 5px; top: 5px; color: #ffffff; background-color: #31384a; border-radius: 8px; padding: 3px 5px; font-size: 9px; }
+.viewer { margin-top: 14px; background-color: #1b202c; border-radius: 18px; padding: 12px; flex-direction: column; }
+.close { color: #c4c9ff; font-size: 12px; text-align: right; padding: 6px; }
+.large-photo { width: 100%; height: 220px; object-fit: contain; }
+.viewer-caption { color: #e4e6f0; font-size: 11px; margin-top: 8px; text-align: center; }
+</style>
+
+<script>
+import link from '../../common/scripts/interconnect'
+
+export default {
+  private: {
+    connectionLabel: 'PHONE NOT CONNECTED',
+    photos: [],
+    selectedPhoto: null
+  },
+  onInit() {
+    link.subscribe((event) => {
+      this.connectionLabel = event.state === 'connected' ? 'PHONE CONNECTED' : 'PHONE NOT CONNECTED'
+      if (event.message && event.message.type === 'photo.library.state') {
+        this.photos = event.message.payload.items || []
+      }
+    })
+    link.checkConnection()
+  },
+  get photoCount() { return this.photos.length },
+  refreshConnection() {
+    link.checkConnection()
+    link.send('photo.library.request', {})
+  },
+  openPhoto(photo) { this.selectedPhoto = photo },
+  closePhoto() { this.selectedPhoto = null }
+}
+</script>
